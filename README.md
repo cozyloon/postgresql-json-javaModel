@@ -1,4 +1,4 @@
-# postgresql-json-javaModel
+# Mapping postgresql json results with Java model
 
 Required Postgresql queries
 
