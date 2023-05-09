@@ -2,7 +2,9 @@ package util;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.github.cozyloon.EzConfig;
 import model.DBDetails;
 import model.DBJsonDetails;
@@ -134,6 +136,79 @@ public class DBHelper {
             executeDBPostStepsWithLoggers(resultSet, connection, preparedStatement);
         }
         return jsonDetails;
+    }
+    
+ public String getJsonResponsePostgre(String id) {
+        ResultSet resultSet = null;
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+
+        String query = "SELECT info FROM orders WHERE info->>'customer' = ?;";
+        try {
+            connection = getConnection();
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, id);
+            resultSet = preparedStatement.executeQuery();
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            ArrayNode jsonArray = objectMapper.createArrayNode();
+            while (resultSet.next()) {
+                JsonNode jsonNode = objectMapper.readTree(resultSet.getString("info"));
+                jsonArray.add(jsonNode);
+            }
+            return jsonArray.toString();
+        } catch (SQLException e) {
+            EzConfig.logERROR(SQL_ERROR, e);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        } finally {
+            executeDBPostStepsWithLoggers(resultSet, connection, preparedStatement);
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    EzConfig.logERROR(SQL_ERROR, e);
+                }
+            }
+        }
+        return null;
+    }
+    
+ public String getJsonResponseObject(String id) {
+        ResultSet resultSet = null;
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+
+        String query = "SELECT info FROM orders WHERE info->>'customer' = ?;";
+        try {
+            connection = getConnection();
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, id);
+            resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                String objectJson = resultSet.getString("info");
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(objectJson);
+                return jsonNode.toString();
+            } else {
+                return null;
+            }
+        } catch (SQLException e) {
+            EzConfig.logERROR(SQL_ERROR, e);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        } finally {
+            executeDBPostStepsWithLoggers(resultSet, connection, preparedStatement);
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    EzConfig.logERROR(SQL_ERROR, e);
+                }
+            }
+        }
+        return null;
     }
 
 }
